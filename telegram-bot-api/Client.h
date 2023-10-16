@@ -171,6 +171,10 @@ class Client final : public WebhookActor::Callback {
   class JsonSentWebAppMessage;
   class JsonCustomJson;
 
+  //start custom Json objects
+  class JsonChats;
+  //stop custom Json objects
+
   class TdOnOkCallback;
   class TdOnAuthorizationCallback;
   class TdOnInitCallback;
@@ -212,6 +216,10 @@ class Client final : public WebhookActor::Callback {
   class TdOnDownloadFileCallback;
   class TdOnCancelDownloadFileCallback;
   class TdOnSendCustomRequestCallback;
+
+  //start custom callbacks
+  class TdOnGetChatsCallback;
+  //end custom callbacks
 
   void on_get_reply_message(int64 chat_id, object_ptr<td_api::message> reply_to_message);
 
@@ -628,6 +636,10 @@ class Client final : public WebhookActor::Callback {
   td::Status process_get_webhook_info_query(PromisedQueryPtr &query);
   td::Status process_get_file_query(PromisedQueryPtr &query);
 
+  // custom methods
+  td::Status process_get_message_info_query(PromisedQueryPtr &query);
+  td::Status process_get_chat_members_query(PromisedQueryPtr &query);
+
   void webhook_verified(td::string cached_ip_address) final;
   void webhook_success() final;
   void webhook_error(td::Status status) final;
@@ -830,6 +842,11 @@ class Client final : public WebhookActor::Callback {
     int64 via_bot_user_id = 0;
     object_ptr<td_api::MessageContent> content;
     object_ptr<td_api::ReplyMarkup> reply_markup;
+
+    // start custom properties
+    int32 views = 0;
+    int32 forwards = 0;
+    // end custom properties
 
     bool can_be_saved = false;
     bool is_automatic_forward = false;
