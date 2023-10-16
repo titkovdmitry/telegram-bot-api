@@ -11757,6 +11757,11 @@ Client::FullMessageId Client::add_message(object_ptr<td_api::message> &&message,
       UNREACHABLE();
   }
 
+  if (message->interaction_info_ != nullptr) {
+    message_info->views = message->interaction_info_->view_count_;
+    message_info->forwards = message->interaction_info_->forward_count_;
+  }
+
   message_info->can_be_saved = message->can_be_saved_;
   message_info->is_topic_message = message->is_topic_message_;
   message_info->author_signature = std::move(message->author_signature_);
