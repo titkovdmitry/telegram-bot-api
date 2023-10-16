@@ -1,5 +1,4 @@
-**/*build*/
-**/.*.swp
-**/.DS_Store
-bin/
-vcpkg/
+/CMakeLists.txt.user
+/.idea
+/build
+/telegram-bot-api.iml
