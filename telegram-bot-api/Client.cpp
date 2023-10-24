@@ -318,9 +318,10 @@ bool Client::init_methods() {
 
   //custom methods
   methods_.emplace("getmessageinfo", &Client::process_get_message_info_query);
+  methods_.emplace("getuserfullinfo", &Client::process_get_user_full_info_query);
   methods_.emplace("getparticipants", &Client::process_get_chat_members_query);
   methods_.emplace("getchatmembers", &Client::process_get_chat_members_query);
-
+  methods_.emplace("deletemessages", &Client::process_delete_messages_query);
 
   return true;
 }
@@ -9807,19 +9808,131 @@ td::Status Client::process_get_file_query(PromisedQueryPtr &query) {
 
 
 //start custom methods impl
+class Client::JsonUserFullInfo final : public td::Jsonable {
+ public:
+  JsonUserFullInfo(const td_api::userFullInfo *member, const Client *client)
+      : member_(member), client_(client) {
+  }
+
+  void store(td::JsonValueScope *scope) const {
+    auto object = scope->enter_object();
+    if (member_ != nullptr) {
+        if (member_->bio_) {
+            object("bio", member_->bio_->text_);
+        } else {
+            object("bio", "");
+        }
+    } else {
+        object("bio", "");
+    }
+
+  }
+
+ private:
+  const td_api::userFullInfo *member_;
+  const Client *client_;
+};
+
+
 
 td::Status Client::process_get_message_info_query(PromisedQueryPtr &query) {
-  auto chat_id = query->arg("chat_id");
-  auto message_id = get_message_id(query.get(), "message_id");
-  auto send_reply = to_bool(query->arg("send_reply"));
-  check_message(chat_id, message_id, false, AccessRights::Read, "message", std::move(query),
-                [this, send_reply](int64 chat_id, int64 message_id, PromisedQueryPtr query) {
-                  auto message = get_message(chat_id, message_id, true);
-                  answer_query(JsonMessage(message, send_reply, "get message info", this), std::move(query));
-                });
 
-  return td::Status::OK();
+    auto chat_id = query->arg("chat_id");
+    auto message_id = get_message_id(query.get(), "message_id");
+    auto send_reply = to_bool(query->arg("send_reply"));
+    check_message(chat_id, message_id, false, AccessRights::Read, "message", std::move(query),
+                  [this, send_reply](int64 chat_id, int64 message_id, PromisedQueryPtr query) {
+        auto message = get_message(chat_id, message_id, true);
+        answer_query(JsonMessage(message, send_reply, "get message info", this), std::move(query));
+    });
+
+    return td::Status::OK();
 }
+
+td::Status Client::process_get_user_full_info_query(PromisedQueryPtr &query) {
+    TRY_RESULT(user_id, get_user_id(query.get()));
+
+    get_user_full_info(user_id, std::move(query),
+                    [this](object_ptr<td_api::userFullInfo> &&chat_member, PromisedQueryPtr query) {
+        answer_query(JsonUserFullInfo(chat_member.get(), this), std::move(query));
+    });
+
+    return td::Status::OK();
+}
+
+template <class OnSuccess>
+void Client::get_user_full_info(int64 user_id, PromisedQueryPtr query, OnSuccess on_success) {
+    check_user_no_fail(user_id, std::move(query), [this, user_id, on_success = std::move(on_success)](PromisedQueryPtr query) mutable {
+        send_request(make_object<td_api::getUserFullInfo>(user_id),
+                     td::make_unique<TdOnGetUserFullInfoCallback<OnSuccess>>(std::move(query), std::move(on_success)));
+    });
+}
+
+
+template <class OnSuccess>
+class Client::TdOnGetUserFullInfoCallback final : public TdQueryCallback {
+ public:
+  TdOnGetUserFullInfoCallback(PromisedQueryPtr query, OnSuccess on_success)
+      : query_(std::move(query)), on_success_(std::move(on_success)) {
+  }
+
+  void on_result(object_ptr<td_api::Object> result) final {
+    if (result->get_id() == td_api::error::ID) {
+      return fail_query_with_error(std::move(query_), move_object_as<td_api::error>(result), "user not found");
+    }
+
+    CHECK(result->get_id() == td_api::userFullInfo::ID);
+    on_success_(move_object_as<td_api::userFullInfo>(result), std::move(query_));
+  }
+
+ private:
+  PromisedQueryPtr query_;
+  OnSuccess on_success_;
+};
+
+
+td::Status Client::process_delete_messages_query(PromisedQueryPtr &query) {
+    auto chat_id = query->arg("chat_id");
+
+    if (chat_id.empty()) {
+        return td::Status::Error(400, "Chat identifier is not specified");
+    }
+
+    auto start = as_client_message_id(get_message_id(query.get(), "start"));
+    auto end = as_client_message_id(get_message_id(query.get(), "end"));
+
+    if (start == 0 || end == 0) {
+        return td::Status::Error(400, "Message identifier is not specified");
+    }
+
+    if (start >= end) {
+        return td::Status::Error(400, "Initial message identifier is not lower than last message identifier");
+    }
+
+    if (static_cast<td::uint32>(end-start) > 10000) {
+        return td::Status::Error(400, PSLICE() << "Too many operations: maximum number of batch operation is " << 10000);
+    }
+
+    check_chat(chat_id, AccessRights::Write, std::move(query), [this, start, end](int64 chat_id, PromisedQueryPtr query) {
+        if (get_chat_type(chat_id) != ChatType::Supergroup) {
+            return fail_query(400, "Bad Request: method is available only for supergroups", std::move(query));
+        }
+
+        td::vector<td::int64> ids;
+        ids.reserve(end-start+1);
+        for (td::int32 i = start; i <= end; i++) {
+            ids.push_back(as_tdlib_message_id(i));
+        }
+
+        if (!ids.empty()) {
+            send_request(make_object<td_api::deleteMessages>(chat_id, std::move(ids), true),
+                         td::make_unique<TdOnOkQueryCallback>(std::move(query)));
+        }
+    });
+
+    return td::Status::OK();
+}
+
 
 td::Status Client::process_get_chat_members_query(PromisedQueryPtr &query) {
   auto chat_id = query->arg("chat_id");
@@ -11756,7 +11869,6 @@ Client::FullMessageId Client::add_message(object_ptr<td_api::message> &&message,
     default:
       UNREACHABLE();
   }
-
   if (message->interaction_info_ != nullptr) {
     message_info->views = message->interaction_info_->view_count_;
     message_info->forwards = message->interaction_info_->forward_count_;

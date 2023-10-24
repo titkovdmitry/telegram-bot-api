@@ -219,6 +219,8 @@ class Client final : public WebhookActor::Callback {
 
   //start custom callbacks
   class TdOnGetChatsCallback;
+  template <class OnSuccess>
+  class TdOnGetUserFullInfoCallback;
   //end custom callbacks
 
   void on_get_reply_message(int64 chat_id, object_ptr<td_api::message> reply_to_message);
@@ -638,7 +640,15 @@ class Client final : public WebhookActor::Callback {
 
   // custom methods
   td::Status process_get_message_info_query(PromisedQueryPtr &query);
+  td::Status process_delete_messages_query(PromisedQueryPtr &query);
   td::Status process_get_chat_members_query(PromisedQueryPtr &query);
+  td::Status process_get_user_full_info_query(PromisedQueryPtr &query);
+
+  template <class OnSuccess>
+  void get_user_full_info(int64 user_id, PromisedQueryPtr query, OnSuccess on_success);
+
+  class JsonUserFullInfo;
+  // custom methods end
 
   void webhook_verified(td::string cached_ip_address) final;
   void webhook_success() final;
