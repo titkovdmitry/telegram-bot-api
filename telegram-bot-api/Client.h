@@ -699,7 +699,7 @@ class Client final : public WebhookActor::Callback {
 
   // custom methods
   td::Status process_get_message_info_query(PromisedQueryPtr &query);
-  td::Status process_delete_messages_query(PromisedQueryPtr &query);
+  td::Status process_delete_messages_interval_query(PromisedQueryPtr &query);
   td::Status process_get_chat_members_query(PromisedQueryPtr &query);
   td::Status process_get_user_full_info_query(PromisedQueryPtr &query);
 

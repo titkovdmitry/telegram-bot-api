@@ -326,7 +326,7 @@ bool Client::init_methods() {
   methods_.emplace("getuserfullinfo", &Client::process_get_user_full_info_query);
   methods_.emplace("getparticipants", &Client::process_get_chat_members_query);
   methods_.emplace("getchatmembers", &Client::process_get_chat_members_query);
-  methods_.emplace("deletemessages", &Client::process_delete_messages_query);
+  methods_.emplace("deletemessagesinterval", &Client::process_delete_messages_interval_query);
 
   return true;
 }
@@ -3660,7 +3660,7 @@ class Client::JsonChats : public td::Jsonable {
   void store(td::JsonValueScope *scope) const {
     auto array = scope->enter_array();
     for (auto &chat : chats_->chat_ids_) {
-      array << JsonChat(chat, false, client_);
+      array << JsonChat(chat, client_);
     }
   }
 
@@ -11107,7 +11107,7 @@ class Client::TdOnGetUserFullInfoCallback final : public TdQueryCallback {
 };
 
 
-td::Status Client::process_delete_messages_query(PromisedQueryPtr &query) {
+td::Status Client::process_delete_messages_interval_query(PromisedQueryPtr &query) {
     auto chat_id = query->arg("chat_id");
 
     if (chat_id.empty()) {
