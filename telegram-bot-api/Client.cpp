@@ -327,6 +327,7 @@ bool Client::init_methods() {
   methods_.emplace("getparticipants", &Client::process_get_chat_members_query);
   methods_.emplace("getchatmembers", &Client::process_get_chat_members_query);
   methods_.emplace("deletemessagesinterval", &Client::process_delete_messages_interval_query);
+  methods_.emplace("forcedeletemessage", &Client::process_force_delete_message_query);
 
   return true;
 }
@@ -2445,7 +2446,7 @@ void Client::JsonMessage::store(td::JsonValueScope *scope) const {
   if (message_->edit_date > 0) {
     object("edit_date", message_->edit_date);
   }
-  // CUSTOM 
+  // CUSTOM
   if (message_->views != 0) {
     object("views", message_->views);
   }
@@ -11128,12 +11129,13 @@ td::Status Client::process_get_file_query(PromisedQueryPtr &query) {
 //start custom methods impl
 class Client::JsonUserFullInfo final : public td::Jsonable {
  public:
-  JsonUserFullInfo(const td_api::userFullInfo *member, const Client *client)
-      : member_(member), client_(client) {
+  JsonUserFullInfo(const int64 user_id, const td_api::userFullInfo *member, const Client *client)
+      : user_id_(user_id), member_(member), client_(client) {
   }
 
   void store(td::JsonValueScope *scope) const {
     auto object = scope->enter_object();
+    object("user_id", user_id_);
     if (member_ != nullptr) {
         if (member_->bio_) {
             object("bio", member_->bio_->text_);
@@ -11147,6 +11149,7 @@ class Client::JsonUserFullInfo final : public td::Jsonable {
   }
 
  private:
+  const int64 user_id_;
   const td_api::userFullInfo *member_;
   const Client *client_;
 };
@@ -11171,8 +11174,8 @@ td::Status Client::process_get_user_full_info_query(PromisedQueryPtr &query) {
     TRY_RESULT(user_id, get_user_id(query.get()));
 
     get_user_full_info(user_id, std::move(query),
-                    [this](object_ptr<td_api::userFullInfo> &&chat_member, PromisedQueryPtr query) {
-        answer_query(JsonUserFullInfo(chat_member.get(), this), std::move(query));
+                    [this, user_id](object_ptr<td_api::userFullInfo> &&chat_member, PromisedQueryPtr query) {
+        answer_query(JsonUserFullInfo(user_id, chat_member.get(), this), std::move(query));
     });
 
     return td::Status::OK();
@@ -11180,7 +11183,7 @@ td::Status Client::process_get_user_full_info_query(PromisedQueryPtr &query) {
 
 template <class OnSuccess>
 void Client::get_user_full_info(int64 user_id, PromisedQueryPtr query, OnSuccess on_success) {
-    check_user_no_fail(user_id, std::move(query), [this, user_id, on_success = std::move(on_success)](PromisedQueryPtr query) mutable {
+    check_user(user_id, std::move(query), [this, user_id, on_success = std::move(on_success)](PromisedQueryPtr query) mutable {
         send_request(make_object<td_api::getUserFullInfo>(user_id),
                      td::make_unique<TdOnGetUserFullInfoCallback<OnSuccess>>(std::move(query), std::move(on_success)));
     });
@@ -11207,6 +11210,27 @@ class Client::TdOnGetUserFullInfoCallback final : public TdQueryCallback {
   PromisedQueryPtr query_;
   OnSuccess on_success_;
 };
+
+
+td::Status Client::process_force_delete_message_query(PromisedQueryPtr &query) {
+    auto chat_id = query->arg("chat_id");
+    auto message_id = get_message_id(query.get());
+
+    if (chat_id.empty()) {
+      return td::Status::Error(400, "Chat identifier is not specified");
+    }
+
+    if (message_id == 0) {
+      return td::Status::Error(400, "Message identifier is not specified");
+    }
+
+    check_chat(chat_id, AccessRights::Write, std::move(query), [this, message_id](int64 chat_id, PromisedQueryPtr query) {
+      send_request(make_object<td_api::deleteMessages>(chat_id, td::vector<int64>{message_id}, true),
+       td::make_unique<TdOnOkQueryCallback>(std::move(query)));
+    });
+
+    return td::Status::OK();
+}
 
 
 td::Status Client::process_delete_messages_interval_query(PromisedQueryPtr &query) {
