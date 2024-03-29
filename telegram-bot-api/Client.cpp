@@ -5967,6 +5967,13 @@ void Client::on_update_authorization_state() {
       //request->use_chat_info_database_ = false;
       //request->use_secret_chats_ = false;
       request->use_message_database_ = USE_MESSAGE_DATABASE;
+
+      // Custom options
+      request->use_file_database_ = true;
+      request->use_chat_info_database_ = true;
+      request->use_message_database_ = true;
+      // end custom options
+
       request->api_id_ = parameters_->api_id_;
       request->api_hash_ = parameters_->api_hash_;
       request->system_language_code_ = "en";
