@@ -327,7 +327,6 @@ bool Client::init_methods() {
   methods_.emplace("getparticipants", &Client::process_get_chat_members_query);
   methods_.emplace("getchatmembers", &Client::process_get_chat_members_query);
   methods_.emplace("deletemessagesinterval", &Client::process_delete_messages_interval_query);
-  methods_.emplace("forcedeletemessage", &Client::process_force_delete_message_query);
 
   return true;
 }
@@ -5968,12 +5967,6 @@ void Client::on_update_authorization_state() {
       //request->use_secret_chats_ = false;
       request->use_message_database_ = USE_MESSAGE_DATABASE;
 
-      // Custom options
-      request->use_file_database_ = true;
-      request->use_chat_info_database_ = true;
-      request->use_message_database_ = true;
-      // end custom options
-
       request->api_id_ = parameters_->api_id_;
       request->api_hash_ = parameters_->api_hash_;
       request->system_language_code_ = "en";
@@ -11218,26 +11211,6 @@ class Client::TdOnGetUserFullInfoCallback final : public TdQueryCallback {
   OnSuccess on_success_;
 };
 
-
-td::Status Client::process_force_delete_message_query(PromisedQueryPtr &query) {
-    auto chat_id = query->arg("chat_id");
-    auto message_id = get_message_id(query.get());
-
-    if (chat_id.empty()) {
-      return td::Status::Error(400, "Chat identifier is not specified");
-    }
-
-    if (message_id == 0) {
-      return td::Status::Error(400, "Message identifier is not specified");
-    }
-
-    check_chat(chat_id, AccessRights::Write, std::move(query), [this, message_id](int64 chat_id, PromisedQueryPtr query) {
-      send_request(make_object<td_api::deleteMessages>(chat_id, td::vector<int64>{message_id}, true),
-       td::make_unique<TdOnOkQueryCallback>(std::move(query)));
-    });
-
-    return td::Status::OK();
-}
 
 
 td::Status Client::process_delete_messages_interval_query(PromisedQueryPtr &query) {
