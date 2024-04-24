@@ -11594,8 +11594,24 @@ class Client::JsonUserFullInfo final : public td::Jsonable {
         } else {
             object("bio", "");
         }
+
+        if(member_->personal_chat_id_ != 0) {
+          object("personal_chat_id", member_->personal_chat_id_);
+        }
+
+        if (member_->business_info_) {
+          object("has_business_info", td::JsonTrue());
+          if (member_->business_info_->intro_) {
+            object("business_intro_title", member_->business_info_->intro_->title_);
+            object("business_intro_message", member_->business_info_->intro_->message_);
+          }
+        } else {
+          object("has_business_info", td::JsonFalse());
+        }
+
     } else {
         object("bio", "");
+        object("has_business_info", td::JsonFalse());
     }
 
   }
