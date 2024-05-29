@@ -11796,14 +11796,39 @@ class Client::JsonUserFullInfo final : public td::Jsonable {
         }
 
         if (member_->business_info_) {
+
           object("has_business_info", td::JsonTrue());
-          if (member_->business_info_->intro_) {
-            object("business_intro_title", member_->business_info_->intro_->title_);
-            object("business_intro_message", member_->business_info_->intro_->message_);
+
+          if (member_->business_info_->start_page_) {
+            object("business_intro_title", member_->business_info_->start_page_->title_);
+            object("business_intro_message", member_->business_info_->start_page_->message_);
           }
+
+
+          if (member_->business_info_->location_) {
+            object("business_intro_location_address", member_->business_info_->location_->address_);
+
+            if (member_->business_info_->location_->location_) {
+              object("business_intro_location_latitude", member_->business_info_->location_->location_->latitude_);
+              object("business_intro_location_longitude", member_->business_info_->location_->location_->longitude_);
+              object("business_intro_location_horizontal_accuracy", member_->business_info_->location_->location_->horizontal_accuracy_);
+            }
+
+          }
+
+
         } else {
           object("has_business_info", td::JsonFalse());
         }
+
+        if (member_->bot_info_) {
+          object("has_bot_info", td::JsonTrue());
+          object("bot_info_short_description", member_->bot_info_->short_description_);
+          object("bot_info_description", member_->bot_info_->description_);
+        } else {
+          object("has_bot_info", td::JsonFalse());
+        }
+
 
     } else {
         object("bio", "");
