@@ -94,7 +94,7 @@ class Client final : public WebhookActor::Callback {
   class JsonReactionType;
   class JsonReactionCount;
   class JsonBirthdate;
-  class JsonBusinessIntro;
+  class JsonBusinessStartPage;
   class JsonBusinessLocation;
   class JsonBusinessOpeningHoursInterval;
   class JsonBusinessOpeningHours;
@@ -173,6 +173,9 @@ class Client final : public WebhookActor::Callback {
   class JsonAddress;
   class JsonOrderInfo;
   class JsonStory;
+  class JsonBackgroundFill;
+  class JsonBackgroundType;
+  class JsonChatBackground;
   class JsonSuccessfulPaymentBot;
   class JsonEncryptedPassportElement;
   class JsonEncryptedCredentials;
@@ -230,7 +233,7 @@ class Client final : public WebhookActor::Callback {
   class TdOnGetChatFullInfoCallback;
   class TdOnGetChatStickerSetCallback;
   class TdOnGetChatCustomEmojiStickerSetCallback;
-  class TdOnGetChatBusinessIntroStickerSetCallback;
+  class TdOnGetChatBusinessStartPageStickerSetCallback;
   class TdOnGetChatPinnedMessageCallback;
   class TdOnGetChatPinnedMessageToUnpinCallback;
   class TdOnGetGroupMembersCallback;
@@ -568,9 +571,9 @@ class Client final : public WebhookActor::Callback {
   td::Result<object_ptr<td_api::inputMessageInvoice>> get_input_message_invoice(const Query *query) const;
 
   static object_ptr<td_api::messageSendOptions> get_message_send_options(bool disable_notification,
-                                                                         bool protect_content);
+                                                                         bool protect_content, int64 effect_id);
 
-  static td::Result<td::vector<td::string>> get_poll_options(const Query *query);
+  static td::Result<td::vector<object_ptr<td_api::formattedText>>> get_poll_options(const Query *query);
 
   static td::Result<object_ptr<td_api::ReactionType>> get_reaction_type(td::JsonValue &&value);
 
@@ -654,6 +657,7 @@ class Client final : public WebhookActor::Callback {
   td::Status process_delete_message_query(PromisedQueryPtr &query);
   td::Status process_delete_messages_query(PromisedQueryPtr &query);
   td::Status process_create_invoice_link_query(PromisedQueryPtr &query);
+  td::Status process_refund_star_payment_query(PromisedQueryPtr &query);
   td::Status process_set_game_score_query(PromisedQueryPtr &query);
   td::Status process_get_game_high_scores_query(PromisedQueryPtr &query);
   td::Status process_answer_web_app_query_query(PromisedQueryPtr &query);
@@ -897,6 +901,7 @@ class Client final : public WebhookActor::Callback {
     int64 background_custom_emoji_id = 0;
     int64 profile_background_custom_emoji_id = 0;
     bool has_protected_content = false;
+    int32 max_reaction_count = 0;
     object_ptr<td_api::chatAvailableReactionsSome> available_reactions;
     object_ptr<td_api::chatPhotoInfo> photo_info;
     object_ptr<td_api::chatPermissions> permissions;
@@ -908,6 +913,9 @@ class Client final : public WebhookActor::Callback {
   };
   ChatInfo *add_chat(int64 chat_id);
   const ChatInfo *get_chat(int64 chat_id) const;
+
+  void set_chat_available_reactions(ChatInfo *chat_info,
+                                    object_ptr<td_api::ChatAvailableReactions> &&available_reactions);
 
   enum class ChatType { Private, Group, Supergroup, Channel, Unknown };
 
@@ -936,6 +944,7 @@ class Client final : public WebhookActor::Callback {
     object_ptr<td_api::ReplyMarkup> reply_markup;
     td::string business_connection_id;
     int64 sender_business_bot_user_id = 0;
+    int64 effect_id = 0;
 
     // start custom properties
     int32 views = 0;
