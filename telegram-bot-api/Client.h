@@ -1,5 +1,5 @@
 //
-// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2024
+// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2025
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -700,6 +700,10 @@ class Client final : public WebhookActor::Callback {
   td::Status process_edit_user_star_subscription_query(PromisedQueryPtr &query);
   td::Status process_get_available_gifts_query(PromisedQueryPtr &query);
   td::Status process_send_gift_query(PromisedQueryPtr &query);
+  td::Status process_verify_user_query(PromisedQueryPtr &query);
+  td::Status process_verify_chat_query(PromisedQueryPtr &query);
+  td::Status process_remove_user_verification_query(PromisedQueryPtr &query);
+  td::Status process_remove_chat_verification_query(PromisedQueryPtr &query);
   td::Status process_set_game_score_query(PromisedQueryPtr &query);
   td::Status process_get_game_high_scores_query(PromisedQueryPtr &query);
   td::Status process_answer_web_app_query_query(PromisedQueryPtr &query);
@@ -927,6 +931,7 @@ class Client final : public WebhookActor::Callback {
     bool is_supergroup = false;
     bool is_forum = false;
     bool can_set_sticker_set = false;
+    bool can_send_gift = false;
     bool is_all_history_available = false;
     bool has_location = false;
     bool join_to_send_messages = false;
@@ -1125,6 +1130,8 @@ class Client final : public WebhookActor::Callback {
   static int64 get_supergroup_chat_id(int64 supergroup_id);
 
   static int64 get_basic_group_chat_id(int64 basic_group_id);
+
+  static int64 get_status_custom_emoji_id(const object_ptr<td_api::emojiStatus> &emoji_status);
 
   void add_update_poll(object_ptr<td_api::updatePoll> &&update);
 
