@@ -390,6 +390,41 @@ class Client::JsonEmptyObject final : public td::Jsonable {
   }
 };
 
+class Client::JsonBirthdate final : public td::Jsonable {
+ public:
+  explicit JsonBirthdate(const td_api::birthdate *birthdate) : birthdate_(birthdate) {
+  }
+  void store(td::JsonValueScope *scope) const {
+    auto object = scope->enter_object();
+    object("day", birthdate_->day_);
+    object("month", birthdate_->month_);
+    if (birthdate_->year_ != 0) {
+      object("year", birthdate_->year_);
+    }
+  }
+
+ private:
+  const td_api::birthdate *birthdate_;
+};
+
+class Client::JsonUserRating final : public td::Jsonable {
+ public:
+  explicit JsonUserRating(const td_api::userRating *user_rating) : user_rating_(user_rating) {
+  }
+  void store(td::JsonValueScope *scope) const {
+    auto object = scope->enter_object();
+    object("level", user_rating_->level_);
+    object("rating", user_rating_->rating_);
+    object("current_level_rating", user_rating_->current_level_rating_);
+    if (!user_rating_->is_maximum_level_reached_) {
+      object("next_level_rating", user_rating_->next_level_rating_);
+    }
+  }
+
+ private:
+  const td_api::userRating *user_rating_;
+};
+
 class Client::JsonFile final : public td::Jsonable {
  public:
   JsonFile(const td_api::file *file, const Client *client, bool with_path)
@@ -451,21 +486,21 @@ class Client::JsonUser final : public td::Jsonable {
     object("is_bot", td::JsonBool(is_bot));
     bool is_deleted = user_info != nullptr && user_info->type == UserInfo::Type::Deleted;
     object("is_deleted", td::JsonBool(is_deleted));
-/*
+
     if (user_info->birthdate != nullptr) {
        object("birthdate", JsonBirthdate(user_info->birthdate.get()));
-    }
-    if (user_info->personal_chat_id != 0) {
-       object("personal_chat_id", user_info->personal_chat_id);
     }
     if (user_info->rating != nullptr) {
        object("rating", JsonUserRating(user_info->rating.get()));
     }
+
+    if (user_info->personal_chat_id != 0) {
+       object("personal_chat_id", user_info->personal_chat_id);
+    }
     if (user_info->paid_message_star_count > 0) {
        object("paid_message_star_count", user_info->paid_message_star_count);
     }
-*/
-    if (user_info != nullptr && user_info->bio != nullptr) {
+    if (user_info != nullptr) {
         object("bio", user_info->bio);
     }
 
@@ -833,22 +868,7 @@ class Client::JsonAcceptedGiftTypes final : public td::Jsonable {
   bool gifts_from_channels_;
 };
 
-class Client::JsonBirthdate final : public td::Jsonable {
- public:
-  explicit JsonBirthdate(const td_api::birthdate *birthdate) : birthdate_(birthdate) {
-  }
-  void store(td::JsonValueScope *scope) const {
-    auto object = scope->enter_object();
-    object("day", birthdate_->day_);
-    object("month", birthdate_->month_);
-    if (birthdate_->year_ != 0) {
-      object("year", birthdate_->year_);
-    }
-  }
 
- private:
-  const td_api::birthdate *birthdate_;
-};
 
 class Client::JsonBusinessStartPage final : public td::Jsonable {
  public:
@@ -997,24 +1017,6 @@ class Client::JsonChatInviteLink final : public td::Jsonable {
  private:
   const td_api::chatInviteLink *chat_invite_link_;
   const Client *client_;
-};
-
-class Client::JsonUserRating final : public td::Jsonable {
- public:
-  explicit JsonUserRating(const td_api::userRating *user_rating) : user_rating_(user_rating) {
-  }
-  void store(td::JsonValueScope *scope) const {
-    auto object = scope->enter_object();
-    object("level", user_rating_->level_);
-    object("rating", user_rating_->rating_);
-    object("current_level_rating", user_rating_->current_level_rating_);
-    if (!user_rating_->is_maximum_level_reached_) {
-      object("next_level_rating", user_rating_->next_level_rating_);
-    }
-  }
-
- private:
-  const td_api::userRating *user_rating_;
 };
 
 class Client::JsonUniqueGiftColors final : public td::Jsonable {
