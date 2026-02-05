@@ -451,7 +451,7 @@ class Client::JsonUser final : public td::Jsonable {
     object("is_bot", td::JsonBool(is_bot));
     bool is_deleted = user_info != nullptr && user_info->type == UserInfo::Type::Deleted;
     object("is_deleted", td::JsonBool(is_deleted));
-
+/*
     if (user_info->birthdate != nullptr) {
        object("birthdate", JsonBirthdate(user_info->birthdate.get()));
     }
@@ -464,6 +464,7 @@ class Client::JsonUser final : public td::Jsonable {
     if (user_info->paid_message_star_count > 0) {
        object("paid_message_star_count", user_info->paid_message_star_count);
     }
+*/
     if (user_info != nullptr && user_info->bio != nullptr) {
         object("bio", user_info->bio);
     }
