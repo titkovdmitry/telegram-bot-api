@@ -452,6 +452,18 @@ class Client::JsonUser final : public td::Jsonable {
     bool is_deleted = user_info != nullptr && user_info->type == UserInfo::Type::Deleted;
     object("is_deleted", td::JsonBool(is_deleted));
 
+    if (user_info->birthdate != nullptr) {
+       object("birthdate", JsonBirthdate(user_info->birthdate.get()));
+    }
+    if (user_info->personal_chat_id != 0) {
+       object("personal_chat_id", user_info->personal_chat_id);
+    }
+    if (user_info->rating != nullptr) {
+       object("rating", JsonUserRating(user_info->rating.get()));
+    }
+    if (user_info->paid_message_star_count > 0) {
+       object("paid_message_star_count", user_info->paid_message_star_count);
+    }
     if (user_info != nullptr && user_info->bio != nullptr) {
         object("bio", user_info->bio);
     }
