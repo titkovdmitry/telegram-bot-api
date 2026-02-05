@@ -451,6 +451,11 @@ class Client::JsonUser final : public td::Jsonable {
     object("is_bot", td::JsonBool(is_bot));
     bool is_deleted = user_info != nullptr && user_info->type == UserInfo::Type::Deleted;
     object("is_deleted", td::JsonBool(is_deleted));
+
+    if (user_info != nullptr && user_info->bio != nullptr) {
+        object("bio", user_info->bio);
+    }
+
     object("first_name", user_info == nullptr ? "" : user_info->first_name);
     if (user_info != nullptr && !user_info->last_name.empty()) {
       object("last_name", user_info->last_name);
