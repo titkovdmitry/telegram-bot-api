@@ -8566,6 +8566,9 @@ void Client::on_update(object_ptr<td_api::Object> result) {
     }
     case td_api::updateDeleteMessages::ID: {
       auto update = move_object_as<td_api::updateDeleteMessages>(result);
+
+      add_update(UpdateType::CustomEvent, JsonCustomJson("custom"), 0, 0);
+
       td::vector<td::unique_ptr<MessageInfo>> deleted_messages;
       for (auto message_id : update->message_ids_) {
         auto deleted_message = delete_message(update->chat_id_, message_id, update->from_cache_);
