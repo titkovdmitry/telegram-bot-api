@@ -8782,9 +8782,9 @@ void Client::on_update(object_ptr<td_api::Object> result) {
       auto *user_info = add_user_info(update->user_->id_);
       add_user(user_info, std::move(update->user_));
 
-      if (was_authorized_ && !logging_out_ && !closing_) {
-        add_update(UpdateType::CustomEvent, JsonUserInfoUpdate(update->user_->id_, user_info, this), 86400, 0);
-      }
+      // if (was_authorized_ && !logging_out_ && !closing_) {
+      //  add_update(UpdateType::CustomEvent, JsonUserInfoUpdate(update->user_->id_, user_info, this), 86400, 0);
+      //}
 
       break;
     }
@@ -8804,9 +8804,9 @@ void Client::on_update(object_ptr<td_api::Object> result) {
       user_info->has_private_forwards = full_info->has_private_forwards_;
       user_info->has_restricted_voice_and_video_messages = full_info->has_restricted_voice_and_video_note_messages_;
 
-      if (was_authorized_ && !logging_out_ && !closing_) {
-        add_update(UpdateType::CustomEvent, JsonUserProfileUpdate(user_id, user_info, this), 86400, 0);
-      }
+      // if (was_authorized_ && !logging_out_ && !closing_) {
+      //   add_update(UpdateType::CustomEvent, JsonUserProfileUpdate(user_id, user_info, this), 86400, 0);
+      // }
 
       break;
     }
