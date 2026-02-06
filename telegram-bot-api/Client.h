@@ -913,6 +913,10 @@ class Client final : public WebhookActor::Callback {
   void get_user_full_info(int64 user_id, PromisedQueryPtr query, OnSuccess on_success);
 
   class JsonUserFullInfo;
+
+  class JsonMessagesDeletedUpdate;
+  class JsonUserInfoUpdate;
+  class JsonUserProfileUpdate;
   // custom methods end
 
   void webhook_verified(td::string cached_ip_address) final;

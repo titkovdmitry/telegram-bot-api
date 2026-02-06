@@ -487,23 +487,6 @@ class Client::JsonUser final : public td::Jsonable {
     bool is_deleted = user_info != nullptr && user_info->type == UserInfo::Type::Deleted;
     object("is_deleted", td::JsonBool(is_deleted));
 
-    if (user_info->birthdate != nullptr) {
-       object("birthdate", JsonBirthdate(user_info->birthdate.get()));
-    }
-    if (user_info->rating != nullptr) {
-       object("rating", JsonUserRating(user_info->rating.get()));
-    }
-
-    if (user_info->personal_chat_id != 0) {
-       object("personal_chat_id", user_info->personal_chat_id);
-    }
-    if (user_info->paid_message_star_count > 0) {
-       object("paid_message_star_count", user_info->paid_message_star_count);
-    }
-    if (user_info != nullptr) {
-        object("bio", user_info->bio);
-    }
-
     object("first_name", user_info == nullptr ? "" : user_info->first_name);
     if (user_info != nullptr && !user_info->last_name.empty()) {
       object("last_name", user_info->last_name);
@@ -7445,6 +7428,95 @@ class Client::TdOnSendCustomRequestCallback final : public TdQueryCallback {
 
 //start custom callbacks impl
 
+class Client::JsonMessagesDeletedUpdate final : public td::Jsonable {
+ public:
+  JsonMessagesDeletedUpdate(const td_api::updateDeleteMessages *update, const Client *client)
+      : update_(update), client_(client) {
+  }
+  void store(td::JsonValueScope *scope) const {
+    auto object = scope->enter_object();
+    object("custom_update_type", "messages_deleted");
+    object("chat", JsonChat(update_->chat_id_, client_));
+    object("message_ids", td::json_array(update_->message_ids_, as_client_message_id));
+  }
+
+ private:
+  const td_api::updateDeleteMessages *update_;
+  const Client *client_;
+};
+
+
+class Client::JsonUserInfoUpdate final : public td::Jsonable {
+ public:
+  JsonUserInfoUpdate(const int64 user_id, const UserInfo *info, const Client *client)
+      : user_id_(user_id), info_(info), client_(client) {
+  }
+  void store(td::JsonValueScope *scope) const {
+    auto object = scope->enter_object();
+    object("custom_update_type", "user_info");
+    object("id", user_id_);
+
+    bool is_bot = info_ != nullptr && info_->type == UserInfo::Type::Bot;
+    object("is_bot", td::JsonBool(is_bot));
+    bool is_deleted = info_ != nullptr && info_->type == UserInfo::Type::Deleted;
+    object("is_deleted", td::JsonBool(is_deleted));
+
+    object("first_name", info_ == nullptr ? "" : info_->first_name);
+    if (info_ != nullptr && !info_->last_name.empty()) {
+      object("last_name", info_->last_name);
+    }
+    if (info_ != nullptr && !info_->active_usernames.empty()) {
+      object("username", info_->active_usernames[0]);
+    }
+    if (info_ != nullptr && !info_->language_code.empty()) {
+      object("language_code", info_->language_code);
+    }
+    if (info_ != nullptr && info_->is_premium) {
+      object("is_premium", td::JsonTrue());
+    }
+    if (info_ != nullptr && info_->added_to_attachment_menu) {
+      object("added_to_attachment_menu", td::JsonTrue());
+    }
+  }
+
+ private:
+  const int64 user_id_;
+  const UserInfo *info_;
+  const Client *client_;
+};
+
+
+
+class Client::JsonUserProfileUpdate final : public td::Jsonable {
+ public:
+  JsonUserProfileUpdate(const int64 user_id, const UserInfo *info, const Client *client)
+      : user_id_(user_id), info_(info), client_(client) {
+  }
+  void store(td::JsonValueScope *scope) const {
+    auto object = scope->enter_object();
+    object("custom_update_type", "user_profile");
+    object("id", user_id_);
+
+    if (info_->personal_chat_id != 0) {
+       object("personal_chat_id", info_->personal_chat_id);
+    }
+    if (info_->paid_message_star_count > 0) {
+       object("paid_message_star_count", info_->paid_message_star_count);
+    }
+    if (info_ != nullptr) {
+       object("bio", info_->bio);
+    }
+  }
+
+ private:
+  const int64 user_id_;
+  const UserInfo *info_;
+  const Client *client_;
+};
+
+
+
+
 class Client::TdOnGetChatsCallback : public TdQueryCallback {
  public:
   explicit TdOnGetChatsCallback(Client *client, PromisedQueryPtr query) : client_(client), query_(std::move(query)) {
@@ -8567,7 +8639,9 @@ void Client::on_update(object_ptr<td_api::Object> result) {
     case td_api::updateDeleteMessages::ID: {
       auto update = move_object_as<td_api::updateDeleteMessages>(result);
 
-      add_update(UpdateType::CustomEvent, JsonCustomJson("custom"), 0, 0);
+      if(was_authorized_ && !logging_out_ && !closing_ && !update->from_cache_) {
+        add_update(UpdateType::CustomEvent, JsonMessagesDeletedUpdate(update.get(), this), 86400, 0);
+      }
 
       td::vector<td::unique_ptr<MessageInfo>> deleted_messages;
       for (auto message_id : update->message_ids_) {
@@ -8707,6 +8781,11 @@ void Client::on_update(object_ptr<td_api::Object> result) {
       auto update = move_object_as<td_api::updateUser>(result);
       auto *user_info = add_user_info(update->user_->id_);
       add_user(user_info, std::move(update->user_));
+
+      if (was_authorized_ && !logging_out_ && !closing_) {
+        add_update(UpdateType::CustomEvent, JsonUserInfoUpdate(update->user_->id_, user_info, this), 86400, 0);
+      }
+
       break;
     }
     case td_api::updateUserFullInfo::ID: {
@@ -8724,6 +8803,11 @@ void Client::on_update(object_ptr<td_api::Object> result) {
       user_info->personal_chat_id = full_info->personal_chat_id_;
       user_info->has_private_forwards = full_info->has_private_forwards_;
       user_info->has_restricted_voice_and_video_messages = full_info->has_restricted_voice_and_video_note_messages_;
+
+      if (was_authorized_ && !logging_out_ && !closing_) {
+        add_update(UpdateType::CustomEvent, JsonUserProfileUpdate(user_id, user_info, this), 86400, 0);
+      }
+
       break;
     }
     case td_api::updateBasicGroup::ID: {
