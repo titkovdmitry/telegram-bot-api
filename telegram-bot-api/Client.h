@@ -923,6 +923,7 @@ class Client final : public WebhookActor::Callback {
   td::Status process_delete_messages_interval_query(PromisedQueryPtr &query);
   td::Status process_get_chat_members_query(PromisedQueryPtr &query);
   td::Status process_get_user_full_info_query(PromisedQueryPtr &query);
+  td::Status process_set_chat_slow_mode_delay(PromisedQueryPtr &query);
 
   template <class OnSuccess>
   void get_user_full_info(int64 user_id, PromisedQueryPtr query, OnSuccess on_success);

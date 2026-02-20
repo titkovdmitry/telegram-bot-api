@@ -374,6 +374,7 @@ bool Client::init_methods() {
   methods_.emplace("getfile", &Client::process_get_file_query);
 
   //custom methods
+  methods_.emplace("setchatslowmodedelay", &Client::process_set_chat_slow_mode_delay);
   methods_.emplace("getmessageinfo", &Client::process_get_message_info_query);
   methods_.emplace("getuserfullinfo", &Client::process_get_user_full_info_query);
   methods_.emplace("getparticipants", &Client::process_get_chat_members_query);
@@ -15393,6 +15394,19 @@ td::Status Client::process_get_user_full_info_query(PromisedQueryPtr &query) {
 
     return td::Status::OK();
 }
+
+td::Status Client::process_set_chat_slow_mode_delay(PromisedQueryPtr &query) {
+  auto chat_id = query->arg("chat_id");
+  auto delay = td::to_integer<int32>(query->arg("delay"));
+
+  check_chat(chat_id, AccessRights::Write, std::move(query),
+             [this, delay](int64 chat_id, PromisedQueryPtr query) mutable {
+               send_request(make_object<td_api::setChatSlowModeDelay>(chat_id, delay),
+                            td::make_unique<TdOnOkQueryCallback>(std::move(query)));
+             });
+  return td::Status::OK();
+}
+
 
 template <class OnSuccess>
 void Client::get_user_full_info(int64 user_id, PromisedQueryPtr query, OnSuccess on_success) {
