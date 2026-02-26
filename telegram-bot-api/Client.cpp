@@ -7594,7 +7594,7 @@ class Client::JsonMessagesDeletedUpdate final : public td::Jsonable {
     auto object = scope->enter_object();
     object("custom_update_type", "messages_deleted");
     object("chat", JsonChat(update_->chat_id_, client_));
-    object("message_ids", td::json_array(update_->message_ids_, as_client_message_id));
+    object("message_ids", td::json_array(update_->message_ids_, as_client_message_id_unchecked));
   }
 
  private:
@@ -8807,8 +8807,8 @@ void Client::on_update(object_ptr<td_api::Object> result) {
       if (!update->from_cache_ && update->is_permanent_) {
           auto chat_type = get_chat_type(update->chat_id_);
           if (chat_type == ChatType::Channel || chat_type == ChatType::Supergroup) {
-              auto webhook_queue_id = update->chat_id_ + (static_cast<int64>(11) << 33);
-              add_update(UpdateType::CustomEvent, JsonMessagesDeletedUpdate(update.get(), this), 86400, webhook_queue_id);
+              // auto webhook_queue_id = update->chat_id_ + (static_cast<int64>(11) << 33);
+              add_update(UpdateType::CustomEvent, JsonMessagesDeletedUpdate(update.get(), this), 86400, 0);
           }
       }
 
