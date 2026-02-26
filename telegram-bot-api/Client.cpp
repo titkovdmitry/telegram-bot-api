@@ -8795,11 +8795,6 @@ void Client::on_update(object_ptr<td_api::Object> result) {
     }
     case td_api::updateDeleteMessages::ID: {
       auto update = move_object_as<td_api::updateDeleteMessages>(result);
-
-      if(was_authorized_ && !logging_out_ && !closing_ && !update->from_cache_) {
-        add_update(UpdateType::CustomEvent, JsonMessagesDeletedUpdate(update.get(), this), 86400, 0);
-      }
-
       td::vector<td::unique_ptr<MessageInfo>> deleted_messages;
       for (auto message_id : update->message_ids_) {
         auto deleted_message = delete_message(update->chat_id_, message_id, update->from_cache_);
@@ -8808,6 +8803,13 @@ void Client::on_update(object_ptr<td_api::Object> result) {
         }
       }
       td::Scheduler::instance()->destroy_on_scheduler(SharedData::get_file_gc_scheduler_id(), deleted_messages);
+
+      if (!update->from_cache_) {
+          auto webhook_queue_id = update->chat_id_ + (static_cast<int64>(11) << 33);
+          add_update(UpdateType::CustomEvent, JsonMessagesDeletedUpdate(update.get(), this), 86400, webhook_queue_id);
+      }
+
+
       break;
     }
     case td_api::updateFile::ID: {
