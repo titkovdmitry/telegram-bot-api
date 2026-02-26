@@ -8805,7 +8805,7 @@ void Client::on_update(object_ptr<td_api::Object> result) {
       td::Scheduler::instance()->destroy_on_scheduler(SharedData::get_file_gc_scheduler_id(), deleted_messages);
 
       if (!update->from_cache_ && update->is_permanent_) {
-          auto chat_type = get_chat_type(update->chat_id_)
+          auto chat_type = get_chat_type(update->chat_id_);
           if (chat_type == ChatType::Channel || chat_type == ChatType::Supergroup) {
               auto webhook_queue_id = update->chat_id_ + (static_cast<int64>(11) << 33);
               add_update(UpdateType::CustomEvent, JsonMessagesDeletedUpdate(update.get(), this), 86400, webhook_queue_id);
