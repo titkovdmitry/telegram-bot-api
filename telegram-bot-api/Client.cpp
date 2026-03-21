@@ -8640,6 +8640,14 @@ void Client::on_update_authorization_state() {
                      td::make_unique<TdOnOkCallback>());
       }
 
+      if(!parameters_->client_socks5_proxy_address_.empty()) {
+        send_request(make_object<td_api::addProxy>(make_object<td_api::proxy>(parameters_->client_socks5_proxy_address_,
+          parameters_->client_socks5_proxy_port_,
+          make_object<td_api::proxyTypeSocks5>(parameters_->client_proxy_username_, parameters_->client_proxy_password_)),
+          true), td::make_unique<TdOnOkCallback>());
+      }
+
+
       auto request = make_object<td_api::setTdlibParameters>();
       request->use_test_dc_ = is_test_dc_;
       request->database_directory_ = dir_;

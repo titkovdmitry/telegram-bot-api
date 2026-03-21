@@ -298,6 +298,23 @@ int main(int argc, char *argv[]) {
                                }
                                return parameters->webhook_proxy_ip_address_.init_host_port(address.str());
                              });
+
+
+
+  options.add_option('\0', "proxy-client-address",
+      "HTTP proxy server for tdlib requests address",
+      td::OptionParser::parse_string(parameters->client_socks5_proxy_address_));
+  options.add_checked_option(
+      '\0', "proxy-client-port",
+       "HTTP proxy server for tdlib requests port",
+      td::OptionParser::parse_integer(parameters->client_socks5_proxy_port_));
+  options.add_option('\0', "proxy-client-user",
+      "HTTP proxy server for tdlib requests user",
+      td::OptionParser::parse_string(parameters->client_proxy_username_));
+  options.add_option('\0', "proxy-client-password",
+      "HTTP proxy server for tdlib requests password",
+      td::OptionParser::parse_string(parameters->client_proxy_password_));
+
   options.add_check([&] {
     if (parameters->api_id_ <= 0 || parameters->api_hash_.empty()) {
       return td::Status::Error("You must provide valid api-id and api-hash obtained at https://my.telegram.org");
