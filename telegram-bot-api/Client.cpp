@@ -8708,6 +8708,8 @@ void Client::on_update_authorization_state() {
           parameters_->client_socks5_proxy_port_,
           make_object<td_api::proxyTypeSocks5>(parameters_->client_proxy_username_, parameters_->client_proxy_password_)),
           true), td::make_unique<TdOnOkCallback>());
+      } else {
+        send_request(make_object<td_api::disableProxy>(), td::make_unique<TdOnOkCallback>());
       }
 
 
