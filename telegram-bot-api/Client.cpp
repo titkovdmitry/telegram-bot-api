@@ -410,41 +410,6 @@ class Client::JsonEmptyObject final : public td::Jsonable {
   }
 };
 
-class Client::JsonBirthdate final : public td::Jsonable {
- public:
-  explicit JsonBirthdate(const td_api::birthdate *birthdate) : birthdate_(birthdate) {
-  }
-  void store(td::JsonValueScope *scope) const {
-    auto object = scope->enter_object();
-    object("day", birthdate_->day_);
-    object("month", birthdate_->month_);
-    if (birthdate_->year_ != 0) {
-      object("year", birthdate_->year_);
-    }
-  }
-
- private:
-  const td_api::birthdate *birthdate_;
-};
-
-class Client::JsonUserRating final : public td::Jsonable {
- public:
-  explicit JsonUserRating(const td_api::userRating *user_rating) : user_rating_(user_rating) {
-  }
-  void store(td::JsonValueScope *scope) const {
-    auto object = scope->enter_object();
-    object("level", user_rating_->level_);
-    object("rating", user_rating_->rating_);
-    object("current_level_rating", user_rating_->current_level_rating_);
-    if (!user_rating_->is_maximum_level_reached_) {
-      object("next_level_rating", user_rating_->next_level_rating_);
-    }
-  }
-
- private:
-  const td_api::userRating *user_rating_;
-};
-
 class Client::JsonFile final : public td::Jsonable {
  public:
   JsonFile(const td_api::file *file, const Client *client, bool with_path)
@@ -8938,8 +8903,8 @@ void Client::on_update_authorization_state() {
       }
 
       if(!parameters_->mtproto_secret_.empty()) {
-        send_request(make_object<td_api::addProxy>(make_object<td_api::proxy>(parameters_->mtproto_address_,
-          parameters_->mtproto_port_,
+        send_request(make_object<td_api::addProxy>(make_object<td_api::proxy>(parameters_->mtproto_proxy_address_,
+          parameters_->mtproto_proxy_port_,
           make_object<td_api::proxyTypeMtproto>(parameters_->mtproto_secret_)),
           true), td::make_unique<TdOnOkCallback>());
       } else if(!parameters_->client_socks5_proxy_address_.empty()) {
