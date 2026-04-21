@@ -117,6 +117,10 @@ struct ClientParameters {
   td::int32 default_max_webhook_connections_ = 0;
   td::IPAddress webhook_proxy_ip_address_;
 
+  td::string mtproto_proxy_address_;
+  td::string mtproto_secret_;
+  int mtproto_proxy_port_;
+
   td::string client_socks5_proxy_address_;
   int client_socks5_proxy_port_;
   td::string client_proxy_username_;

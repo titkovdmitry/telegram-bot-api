@@ -8703,7 +8703,12 @@ void Client::on_update_authorization_state() {
                      td::make_unique<TdOnOkCallback>());
       }
 
-      if(!parameters_->client_socks5_proxy_address_.empty()) {
+      if(!parameters_->mtproto_secret_.empty()) {
+        send_request(make_object<td_api::addProxy>(make_object<td_api::proxy>(parameters_->mtproto_address_,
+          parameters_->mtproto_port_,
+          make_object<td_api::proxyTypeMtproto>(parameters_->mtproto_secret_)),
+          true), td::make_unique<TdOnOkCallback>());
+      } else if(!parameters_->client_socks5_proxy_address_.empty()) {
         send_request(make_object<td_api::addProxy>(make_object<td_api::proxy>(parameters_->client_socks5_proxy_address_,
           parameters_->client_socks5_proxy_port_,
           make_object<td_api::proxyTypeSocks5>(parameters_->client_proxy_username_, parameters_->client_proxy_password_)),

@@ -300,6 +300,20 @@ int main(int argc, char *argv[]) {
                              });
 
 
+  options.add_option('\0', "mtproto-secret",
+      "MTPROTO secret",
+      td::OptionParser::parse_string(parameters->mtproto_secret_));
+  options.add_option('\0', "mtproto-client-address",
+      "MTPROTO address",
+       td::OptionParser::parse_string(parameters->mtproto_proxy_address_));
+  options.add_checked_option(
+      '\0', "mtproto-client-port",
+       "MTPROTO port",
+      td::OptionParser::parse_integer(parameters->mtproto_proxy_port_));
+
+  td::string mtproto_proxy_address_;
+  td::string mtproto_secret_;
+  int mtproto_proxy_port_;
 
   options.add_option('\0', "proxy-client-address",
       "HTTP proxy server for tdlib requests address",
