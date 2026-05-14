@@ -259,6 +259,8 @@ class Client final : public WebhookActor::Callback {
 
   //start custom Json objects
   class JsonChats;
+  class JsonChatJoinRequestsElement;
+  class JsonChatJoinRequests;
   //stop custom Json objects
 
   class TdOnOkCallback;
@@ -326,6 +328,7 @@ class Client final : public WebhookActor::Callback {
   class TdOnGetChatsCallback;
   template <class OnSuccess>
   class TdOnGetUserFullInfoCallback;
+  class TdOnGetSupergroupJoinRequestsCallback;
   //end custom callbacks
 
   void on_get_reply_message(int64 chat_id, object_ptr<td_api::message> reply_to_message);
@@ -966,6 +969,7 @@ class Client final : public WebhookActor::Callback {
   td::Status process_get_chat_members_query(PromisedQueryPtr &query);
   td::Status process_get_user_full_info_query(PromisedQueryPtr &query);
   td::Status process_set_chat_slow_mode_delay(PromisedQueryPtr &query);
+  td::Status process_get_chat_join_requests_query(PromisedQueryPtr &query);
 
   template <class OnSuccess>
   void get_user_full_info(int64 user_id, PromisedQueryPtr query, OnSuccess on_success);
