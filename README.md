@@ -97,3 +97,15 @@ and continue sending requests to the new server as usual.
 <a name="license"></a>
 ## License
 `Telegram Bot API server` source code is licensed under the terms of the Boost Software License. See [LICENSE_1_0.txt](http://www.boost.org/LICENSE_1_0.txt) for more information.
+
+
+git remote add rootrepo2 https://github.com/tdlib/telegram-bot-api
+git fetch rootrepo2 -v
+git pull rootrepo2 master -v
+
+git submodule status
+cd td/
+git fetch origin
+git checkout f06b0ba
+cd ..
+git fetch origin
