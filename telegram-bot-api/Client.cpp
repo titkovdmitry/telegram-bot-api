@@ -401,6 +401,7 @@ bool Client::init_methods() {
   methods_.emplace("getparticipants", &Client::process_get_chat_members_query);
   methods_.emplace("getchatmembers", &Client::process_get_chat_members_query);
   methods_.emplace("getchatjoinrequests", &Client::process_get_chat_join_requests_query);
+  methods_.emplace("getchatextrainfo", &Client::process_get_chat_extra_info_query);
   methods_.emplace("deletemessagesinterval", &Client::process_delete_messages_interval_query);
 
   return true;
@@ -6135,6 +6136,27 @@ class Client::JsonChatJoinRequests final : public td::Jsonable {
   const int32 total_count_;
   const Client *client_;
 };
+
+
+class Client::JsonChatExtra final : public td::Jsonable {
+ public:
+  JsonChatExtra(td::td_api::chat* chat, const Client *client)
+      : chat_(chat), client_(client) {
+  }
+  void store(td::JsonValueScope *scope) const {
+
+    auto object = scope->enter_object();
+    object("message_auto_delete_time", chat_->message_auto_delete_time_);
+    object("pending_join_requests_count", chat_->pending_join_requests_ != nullptr ? chat_->pending_join_requests_->total_count_ : 0);
+
+
+  }
+
+ private:
+  td_api::chat* chat_;
+  const Client *client_;
+};
+
 
 // END CUSTOM
 
@@ -16222,6 +16244,29 @@ class Client::TdOnGetSupergroupJoinRequestsCallback final : public TdQueryCallba
   PromisedQueryPtr query_;
 };
 
+class Client::TdOnGetChatExtraCallback final : public TdQueryCallback {
+ public:
+  TdOnGetChatExtraCallback(const Client *client, PromisedQueryPtr query)
+      : client_(client), query_(std::move(query)) {
+  }
+
+  void on_result(object_ptr<td_api::Object> result) final {
+    if (result->get_id() == td_api::error::ID) {
+      return fail_query_with_error(std::move(query_), move_object_as<td_api::error>(result));
+    }
+
+    CHECK(result->get_id() == td_api::chat::ID);
+    auto chat = move_object_as<td_api::chat>(result);
+
+    answer_query(JsonChatExtra(chat.get(), client_), std::move(query_));
+  }
+
+ private:
+  const Client *client_;
+  ChatType chat_type_;
+  PromisedQueryPtr query_;
+};
+
 td::Status Client::process_delete_messages_interval_query(PromisedQueryPtr &query) {
     auto chat_id = query->arg("chat_id");
 
@@ -16351,6 +16396,34 @@ td::Status Client::process_get_chat_join_requests_query(PromisedQueryPtr &query)
             make_object<td_api::getChatJoinRequests>(
                 chat_info->supergroup_id, std::move(invite_link), std::move(filter), nullptr, limit),
             td::make_unique<TdOnGetSupergroupJoinRequestsCallback>(this, std::move(query)));
+      }
+      case ChatInfo::Type::Unknown:
+      default:
+        UNREACHABLE();
+    }
+  });
+  return td::Status::OK();
+}
+
+
+
+td::Status Client::process_get_chat_extra_info_query(PromisedQueryPtr &query) {
+  auto chat_id = query->arg("chat_id");
+
+  check_chat(
+      chat_id, AccessRights::Read, std::move(query), [this](int64 chat_id, PromisedQueryPtr query) {
+        auto chat_info = get_chat(chat_id);
+        CHECK(chat_info != nullptr);
+    switch (chat_info->type) {
+      case ChatInfo::Type::Private:
+        return fail_query(400, "Bad Request: there are no method in the private chat", std::move(query));
+      case ChatInfo::Type::Group: {
+        return fail_query(400, "Bad Request: there are no method in the group chat", std::move(query));
+      }
+      case ChatInfo::Type::Supergroup: {
+        return send_request(
+            make_object<td_api::getChat>(chat_id),
+            td::make_unique<TdOnGetChatExtraCallback>(this, std::move(query)));
       }
       case ChatInfo::Type::Unknown:
       default:
